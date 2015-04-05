@@ -1,0 +1,136 @@
+package projectilemotion;
+
+//BuddyBar is a control made up of a label, a text input field, and a scrollbar. Together, they allow a user to input a single real number.
+import java.awt.*;
+import java.awt.event.*;
+import java.util.Vector;
+
+public class BuddyBar implements AdjustmentListener, ActionListener// This panel listens for adjustments of its scrollbar and entries in its text field.
+{
+	double barValue;// barValue is the real number this buddy bar currently represents.
+    int iSlideMax;// The scrollbar registers in integers from zero to iSlideMax.
+    double slideMin;// The scrollbar is there for intuitive play so its positions represent real numbers in a reasonable range.
+    double slideMax;
+    double textMin;// The user can, however, enter less reasonable numbers in the text field.
+    double textMax;
+    Label textLabel;
+    TextField tField;// text input field
+    Scrollbar slippery;// scrollbar
+    Vector Listeners;// list of objects to notify when the barValue changes.
+	
+    public static interface BuddyListener
+    {
+
+        public abstract void buddyValueChanged(BuddyBar buddybar, double d);
+    }
+
+
+    public BuddyBar(String s, double d, double d1, double d2, double d3, double d4)
+    {
+		// assign values from the initializer to class variables.
+        String s1 = new String(s);
+        slideMin = d;
+        slideMax = d1;
+        textMin = d2;
+        textMax = d3;
+        barValue = d4;
+        textLabel = new Label(s1);
+        tField = new TextField(Double.toString(barValue), 12);// new text input field 12 characters wide initialized to our initial value.
+        tField.addActionListener(this);// Tell the textField to notify us when someone hits enter after typing a number.
+        iSlideMax = 200;// make a scrollbar with 200 increments and a scrollbutton 10% of the total bar size.
+        slippery = new Scrollbar(0, 0, 0, 0, iSlideMax);//Scrollbar(int orientation, int value, int visible(width of scroll bar), int minimum, int maximum)//Constructs a new scroll bar with the specified orientation, initial value, visible amount, and minimum and maximum values.
+        slippery.addAdjustmentListener(this);//Adds the specified adjustment listener to receive instances of AdjustmentEvent from this scroll bar.
+        setSlide();// This routine sets the scrollbar to agree with the current barValue.
+        Listeners = new Vector(5);// Initialize the list of listeners to our buddybar.  There will usually only be one.//activating all the event listeners
+    }
+
+    public TextField getTextField()
+    {
+        return tField;// test input is returned
+    }
+
+    public Label getLabel()
+    {
+        return textLabel;
+    }
+
+    public Scrollbar getScrollbar()
+    {
+        return slippery; // buddybar values are returned
+    }
+
+    private void changeValue()// Tell our listeners that the barValue of this buddybar has changed.
+    {
+        for(int i = 0; i < Listeners.size(); i++)
+        {
+            BuddyListener buddylistener = (BuddyListener)Listeners.elementAt(i);
+            buddylistener.buddyValueChanged(this, barValue);
+        }
+
+    }
+
+    public double getValue()// Returns the current value of the buddybar.
+    {
+        readTextField();
+        return barValue;
+    }
+
+    public void actionPerformed(ActionEvent actionevent)// implementation of actionListener.  Called when someone hits enter in a textField.
+    {                                      //Called when someone hits enter in a textField.
+        double d = barValue;
+        readTextField();
+        if(d != barValue)
+            changeValue();
+    }
+
+    private void readTextField()
+    {
+        String s = tField.getText();
+        try
+        {
+            Double double1 = new Double(s);
+            double d = double1.doubleValue();
+            if(d < textMin)
+            {
+                barValue = textMin;
+                tField.setText(Double.toString(barValue));
+            } else
+            if(d > textMax)
+            {
+                barValue = textMax;
+                tField.setText(Double.toString(barValue));
+            }
+            barValue = d;
+            setSlide();// In case the value is changed, make sure the scrollbar is correct.
+        }
+        catch(NumberFormatException numberformatexception)
+        {
+            tField.setText(Double.toString(barValue));// This exception happens when the textField doesn't contain a number.
+        } // in this case it gets back to the previous value
+    }
+
+    public void adjustmentValueChanged(AdjustmentEvent adjustmentevent)// Called when the scrollbar is moved.
+    {
+        int i = adjustmentevent.getValue();
+        barValue = slideMin + ((double)i * (slideMax - slideMin)) / (double)iSlideMax;// calculate real value of from integer scrollbar position.
+        tField.setText(Double.toString(barValue));// set the textField to agree.
+        changeValue();// Tell our listeners it changed.
+    }
+
+    private void setSlide()// make the slide position agree with the barValue.
+    {
+        if(barValue <= slideMax)
+            slippery.setValue((int)(((double)iSlideMax * (barValue - slideMin)) / (slideMax - slideMin)));
+        else
+        if(barValue > slideMax) 
+            slippery.setValue(iSlideMax);
+        else
+        if(barValue < 0.0D)
+            slippery.setValue(0);
+    }
+
+    public void addBuddyListener(BuddyListener buddylistener)
+    {
+        Listeners.addElement(buddylistener);
+    }
+}
